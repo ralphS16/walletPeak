@@ -1,17 +1,17 @@
 {
   "description": "Adds a browser action icon to the toolbar. Click the button to see the balance of your wallets.",
-  "manifest_version": 1,
+  "manifest_version": 2,
   "name": "walletPeak",
   "version": "0.1",
   "homepage_url": "https://github.com/ralphS16/walletPeak",
+
   "icons": {
-    "48": "icons/wallet-48.png",
+    "48": "icons/wallet-48.png"
   },
 
   "browser_action": {
     "default_icon": "icons/wallet.svg",
     "default_title": "walletPeak",
-    "default_popup": "popup/peaker.html",
-    "browser_style": true,
-  },
+    "default_popup": "popup/peaker.html"
+  }
 }
