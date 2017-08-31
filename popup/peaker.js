@@ -1,5 +1,4 @@
 /*
-  I need to modify this code to make it asynchronous using fetch and promises in the right way like I tried to do in code below.
   I need to handle errors to display a message if something wrong happened.
   I need to add a "+" button in order to add wallets.
   I need to update the value and balance in the saved Data in the json file when I download the data from the server.
@@ -8,115 +7,99 @@
 
 
 window.addEventListener("load", function load() {
-  window.removeEventListener("load", load, false);
-  // Loads the data in memory and renders it when the body is loaded
-  displayWallets(getWalletsData(syncJSONFetch("data.json")));
+  window.removeEventListener("load", load, false); // removes the listener because we want this to be fired once
+  fetch("data.json").then( //gets the wallets data and extracts the json object and sends it to the processData function
+    function(res) {
+      return res.json();
+    }
+  ).then(processData);
 });
 
-function getWalletsData(dataObj) {
+function processData(dataObj) {
   let timestamp = Date.now(); // now timestamp to prevent the user to load more than once every 5 minutes
-  let walletsData = [];
   if ((timestamp - dataObj.last_update)/60000 > 5) {
     //data is old, so we need to fetch new data from blockchain explorers
-    exchangeRates = getExchangeRates(dataObj.currency, dataObj.list);
-    for (wallet of dataObj.list) {
-      if (wallet.type == "ltc" || wallet.type == "btc" || wallet.type == "doge") { // if crypto type is LTC, BTC or DOGE, use chain.so API
-        let balance = 0.0;
-        for (address of wallet.addr) { // get all balances
-          let url = "https://chain.so/api/v2/get_address_balance/" + wallet.type.toUpperCase() + "/" + address; // create URL of request
-          let walletData = syncJSONFetch(url); // get the json object from the api, TODO handle error
-          balance += parseFloat(walletData.data.confirmed_balance);
-        }
-        walletsData.push([wallet.type, balance, balance * exchangeRates[wallet.type], dataObj.currency]); // push a new wallet balance, value pair
-      }
-    }
-
+    // run the exRates and balances generator in a promise and when it is resolved, send it to updateData with the dataObj function
+    Promise.all([runGenerator(getExchangeRates, dataObj.list), runGenerator(getBalances, dataObj.list)]).then((x) => updateData(...x, dataObj));
   } else {
     // data is not old, so we just need to format it
-    for (wallet of dataObj.list) {
-      walletsData.push([wallet.type, wallet.balance, wallet.value, dataObj.currency]); // push a new wallet balance, value pair
-    }
+    displayWallets(dataObj);
   }
-  return walletsData;
 }
 
-function getExchangeRates(curr, list) {
-  let exRates = {};
-  for (wallet of list) {
-    if (!exRates.hasOwnProperty(wallet.type)) {
-      // if not already encountered this type of cryptocurrency, add it to the list of exchange rates
-      obj = syncJSONFetch("https://api.cryptonator.com/api/ticker/"+wallet.type+"-"+curr) // TODO handle error
-      exRates[wallet.type] = obj.ticker.price;
+function updateData(exRates, balances, dataObj){
+  let walletList = dataObj.list;
+  for (let i = 0; i < walletList.length; i++) { // iterates through every wallet
+    let wallet = walletList[i];
+    wallet.balance = balances[i]; // get the new balance and value using the data returned by the generators
+    wallet.value = balances[i] * exRates[wallet.type+"-"+wallet.convert];
+  }
+  dataObj.last_update = Date.now(); // the object was last updateed now
+  displayWallets(dataObj); // display the wallets
+}
+
+function *getBalances(walletList) {
+  let balances = []; // contains the balances for the wallets in order
+  for (let i = 0; i < walletList.length; i++) { // iterates through every wallet
+    balances[i] = 0;
+    for (let j = 0; j < walletList[i].addr.length; j++) { //iterates through every address in the wallet
+      if (walletList[i].type == "ltc" || walletList[i].type == "btc" || walletList[i].type == "doge" || walletList[i].type == "dash") { // if the crypto is supported by SoChain
+        let uri = "https://chain.so/api/v2/get_address_balance/" + walletList[i].type.toUpperCase() + "/" + walletList[i].addr[j]; // create URI of request
+        let response = yield fetch(uri); // get api response
+        let post = yield response.json(); // extract json object
+
+        balances[i] += parseFloat(post.data.confirmed_balance); // add the confirmed balance of this address to the total balance
+      }
     }
   }
+  // when all wallets were processed, return the balances array
+  return balances;
+}
+
+function *getExchangeRates(walletList) {
+  const exRates = {}; // get a list of exhange rates
+  for (let i = 0; i < walletList.length; i++) { // iterates through every wallet
+    if (!exRates.hasOwnProperty(walletList[i].type+"-"+walletList[i].convert)) {
+      // if not already encountered this type of cryptocurrency, add it to the list of exchange rates
+      let uri = "https://api.cryptonator.com/api/ticker/"+walletList[i].type+"-"+walletList[i].convert; // create URI of request
+      let response = yield fetch(uri); // get api response
+      let post = yield response.json(); // extract json object
+
+      exRates[walletList[i].type+"-"+walletList[i].convert] = post.ticker.price; // add this conversion rate to exRates
+    }
+  }
+  // when all wallets were processed, yield the exRates object
   return exRates;
 }
 
-function syncJSONFetch(url) {
-  let xmlhttp = new XMLHttpRequest();
-  xmlhttp.open("GET", url, false); // open a synchronous request to the data
-  if (xmlhttp.overrideMimeType) { // make sure that the file is read as JSON if supported by browser
-    xmlhttp.overrideMimeType("application/json");
+function runGenerator(gen, arg) { // run the generator, code inspired by a FunFunFunction episode on Generators
+  const iterator = gen(arg);
+  const iteration = iterator.next();
+  function iterate(iteration) {
+    if (iteration.done) {
+      //console.log(iteration.value);
+      return iteration.value;
+    }
+    const promise = iteration.value;
+    return promise.then(function(res) {
+      return iterate(iterator.next(res));
+    });
   }
-  xmlhttp.send(); // send the request
-  if (xmlhttp.status == 200) { // if the reques is successful, return the object that was read
-    return JSON.parse(xmlhttp.responseText);
-  } else { // handle errors
-    // TODO throw an error
-    console.log(xmlhttp.status);
-    return {"error" : 1};
-  }
+  return iterate(iteration);
 }
 
 function displayWallets(walletsData) {
   // displays all the wallets balance, value pairs in a a nice table that is easy to format.
   innerHtml = "<table>"
-  for (wallet of walletsData) {
-  innerHtml += `<tr>
-    <td class="balance">${wallet[1].toFixed(2)}</td>
-    <td class="crypto_typ">${wallet[0].toUpperCase()}</td>
-    <td class="value_fiat">${wallet[2].toFixed(2)}</td>
-    <td class="fiat">${wallet[3].toUpperCase()}</td>
-  </tr>
-`;
-}
-
+  for (wallet of walletsData.list) { // iterates through all wallets
+    // add a table row with usefull information and css classes to make it easy to style
+    innerHtml += `<tr>
+      <td class="balance">${wallet["balance"].toFixed(2)}</td>
+      <td class="crypto_typ">${wallet["type"].toUpperCase()}</td>
+      <td class="value_fiat">${wallet["value"].toFixed(2)}</td>
+      <td class="fiat">${wallet["convert"].toUpperCase()}</td>
+    </tr>`;
+  }
   innerHtml += "</table>";
   document.body.innerHTML = innerHtml; // loads the inner html in the body
 }
-
-
-/*
-
-***************** This is old async code that I will need to reuse after ********************
-function renderData(dataObj) {
-  // Renders all the balances in the html body
-  let timestamp = Date.now(); // now timestamp to prevent the user to load more than once every 5 minutes
-  if ((timestamp - dataObj.last_update)/60000 > 5) {
-    fiatCurrency = dataObj.currency;
-    for (let item of dataObj.list) { // goes through all the addresses saved by the user
-      if (item.type == "ltc" || item.type == "btc" || item.type == "doge") { // if crypto type is LTC, BTC or DOGE, use chain.so API
-        let url = "https://chain.so/api/v2/get_address_balance/" + item.type.toUpperCase() + "/" + item.addr; // create URL of request
-        fetch(url).then( // fetch the request and send it to renderLineWithChain() function.
-          function(response) {
-
-            return response.json();
-        }).then(renderLineWithChain);
-      }
-    }
-  }
-}
-
-function renderLineWithChain(jsonResponse) {
-  if (jsonResponse.status == "success") {
-    let text = "Balance : " + jsonResponse.data.confirmed_balance + " " + jsonResponse.data.network + " = ";
-    fetch("https://api.cryptonator.com/api/ticker/"+jsonResponse.data.network.toLowerCase()+"-"+fiatCurrency).then(
-    function(response){
-      return response.json();
-    }).then(function(obj) {
-      text += parseFloat(jsonResponse.data.confirmed_balance) * parseFloat(obj.ticker.price) + " " + obj.ticker.target;
-    });
-    document.body.append(document.createTextNode(text));
-  }
-}
-*/

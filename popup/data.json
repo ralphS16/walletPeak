@@ -4,15 +4,16 @@
       "addr" : ["Lh1atsXSNcAYd414TEfbVNK8yuZAtFqGM3", "3CDJNfdWX8m2NwuGUV3nhXHXEeLygMXoAj"],
       "type" : "ltc",
       "balance" : 0.0,
-      "value" : 0.0
+      "value" : 0.0,
+      "convert" : "usd"
     },
     {
       "addr" : ["LWAdnPrYorWAxeUb92CSG8pN9fG9BJA1x8"],
       "type" : "ltc",
       "balance" : 0.0,
-      "value" : 0.0
+      "value" : 0.0,
+      "convert" : "cad"
     }
   ],
-  "last_update" : 0,
-  "currency" : "usd"
+  "last_update" : 0
 }
