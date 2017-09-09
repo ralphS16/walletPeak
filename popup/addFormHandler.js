@@ -1,3 +1,5 @@
+let browser = chrome || browser;
+
 window.addEventListener("load", function load() {
   window.removeEventListener("load", load, false); // removes the listener because we want this to be fired once
   document.getElementById("addbtn").addEventListener("click", addWallet, false);

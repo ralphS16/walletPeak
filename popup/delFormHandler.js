@@ -1,3 +1,4 @@
+let browser = chrome || browser;
 let delN = window.location.href.split("=")[1]; //get the index of wallet to delete from url
 browser.storage.local.get("data", function(obj){
   obj.data.list.splice(parseInt(delN), 1); // pop the undesired wallet

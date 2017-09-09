@@ -3,14 +3,21 @@
   I need to add a "-" button to delete wallets
   I need to use CSS to add style to the table so that my extension looks good.
 */
-
+let browser = chrome || browser;
 
 window.addEventListener("load", function load() {
+  console.log(browser);
   window.removeEventListener("load", load, false); // removes the listener because we want this to be fired once
   browser.storage.local.get("data", function(obj){processData(obj.data);}); // gets data from browser local storage and processes it
 });
 
 function processData(dataObj) {
+  if (!dataObj) {
+    dataObj = {};
+    dataObj["last_update"] = Date.now();
+    dataObj["list"] = [];
+    browser.storage.local.set({"data" : dataObj});
+  }
   let timestamp = Date.now(); // now timestamp to prevent the user to load more than once every 10 minutes
   if ((timestamp - dataObj.last_update)/60000 > 10) {
     //data is old, so we need to fetch new data from blockchain explorers
