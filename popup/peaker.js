@@ -1,23 +1,18 @@
 /*
   I need to handle errors to display a message if something wrong happened.
-  I need to add a "+" button in order to add wallets.
-  I need to update the value and balance in the saved Data in the json file when I download the data from the server.
+  I need to add a "-" button to delete wallets
   I need to use CSS to add style to the table so that my extension looks good.
 */
 
 
 window.addEventListener("load", function load() {
   window.removeEventListener("load", load, false); // removes the listener because we want this to be fired once
-  fetch("data.json").then( //gets the wallets data and extracts the json object and sends it to the processData function
-    function(res) {
-      return res.json();
-    }
-  ).then(processData);
+  browser.storage.local.get("data", function(obj){processData(obj.data);}); // gets data from browser local storage and processes it
 });
 
 function processData(dataObj) {
-  let timestamp = Date.now(); // now timestamp to prevent the user to load more than once every 5 minutes
-  if ((timestamp - dataObj.last_update)/60000 > 5) {
+  let timestamp = Date.now(); // now timestamp to prevent the user to load more than once every 10 minutes
+  if ((timestamp - dataObj.last_update)/60000 > 10) {
     //data is old, so we need to fetch new data from blockchain explorers
     // run the exRates and balances generator in a promise and when it is resolved, send it to updateData with the dataObj function
     Promise.all([runGenerator(getExchangeRates, dataObj.list), runGenerator(getBalances, dataObj.list)]).then((x) => updateData(...x, dataObj));
@@ -35,6 +30,7 @@ function updateData(exRates, balances, dataObj){
     wallet.value = balances[i] * exRates[wallet.type+"-"+wallet.convert];
   }
   dataObj.last_update = Date.now(); // the object was last updateed now
+  browser.storage.local.set({"data" : dataObj}); // updates the data in local storage
   displayWallets(dataObj); // display the wallets
 }
 
@@ -91,15 +87,19 @@ function runGenerator(gen, arg) { // run the generator, code inspired by a FunFu
 function displayWallets(walletsData) {
   // displays all the wallets balance, value pairs in a a nice table that is easy to format.
   innerHtml = "<table>"
+  let n = 0; //counts the wallets
   for (wallet of walletsData.list) { // iterates through all wallets
     // add a table row with usefull information and css classes to make it easy to style
     innerHtml += `<tr>
       <td class="balance">${wallet["balance"].toFixed(2)}</td>
-      <td class="crypto_typ">${wallet["type"].toUpperCase()}</td>
+      <td class="crypto_type">${wallet["type"].toUpperCase()}</td>
       <td class="value_fiat">${wallet["value"].toFixed(2)}</td>
       <td class="fiat">${wallet["convert"].toUpperCase()}</td>
+      <td class="delwall"><a href="delForm.html?n=${n}">Delete this wallet</a></td>
     </tr>`;
+    n++;
   }
+  innerHtml += `<tr><td colspan=4 class="addwall"><a href="addForm.html">Add a wallet</a></td></tr>`
   innerHtml += "</table>";
   document.body.innerHTML = innerHtml; // loads the inner html in the body
 }

@@ -1,8 +1,8 @@
 {
-  "description": "Adds a browser action icon to the toolbar. Click the button to see the balance of your wallets.",
+  "description": "Adds a browser action icon to the toolbar. Click the button to see the balance of your wallets. Add wallets or remove wallets, supports BTC, LTC, DASH and DOGE and can convert to USD, CAD, EUR and CNY.",
   "manifest_version": 2,
   "name": "walletPeak",
-  "version": "0.1",
+  "version": "1.0",
   "homepage_url": "https://github.com/ralphS16/walletPeak",
 
   "icons": {
@@ -13,5 +13,6 @@
     "default_icon": "icons/wallet.svg",
     "default_title": "walletPeak",
     "default_popup": "popup/peaker.html"
-  }
+  },
+  "permissions": ["storage"]
 }
