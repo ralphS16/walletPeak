@@ -1,0 +1,31 @@
+@font-face { /*Montserrat Regular font designed by Julieta Ulanovsky : https://github.com/JulietaUla/Montserrat */
+    font-family: montserrat;
+    src: url('../Fonts/Montserrat-Regular.woff2');
+    src: url('../Fonts/Montserrat-Regular.woff');
+    font-style: normal;
+}
+
+body {
+  background-color: #444444;
+  color: #fff;
+  font-family: "montserrat";
+}
+
+.cryptotype, .fiat {
+  background-color: #000;
+  border-radius: 5px;
+  padding: 3px 5px 3px 5px;
+}
+.balance, .valuefiat {
+  font-size: 20px;
+}
+
+td {
+  font-family: montserrat;
+  padding: 5px;
+}
+
+.delwall, .addwall {
+  padding: 0px;
+  align: right;
+}

@@ -1,12 +1,10 @@
 /*
   I need to handle errors to display a message if something wrong happened.
-  I need to add a "-" button to delete wallets
-  I need to use CSS to add style to the table so that my extension looks good.
+  I need to improve my CSS styling
 */
 let browser = chrome || browser;
 
 window.addEventListener("load", function load() {
-  console.log(browser);
   window.removeEventListener("load", load, false); // removes the listener because we want this to be fired once
   browser.storage.local.get("data", function(obj){processData(obj.data);}); // gets data from browser local storage and processes it
 });
@@ -99,14 +97,15 @@ function displayWallets(walletsData) {
     // add a table row with usefull information and css classes to make it easy to style
     innerHtml += `<tr>
       <td class="balance">${wallet["balance"].toFixed(2)}</td>
-      <td class="crypto_type">${wallet["type"].toUpperCase()}</td>
-      <td class="value_fiat">${wallet["value"].toFixed(2)}</td>
+      <td class="cryptotype">${wallet["type"].toUpperCase()}</td>
+      <td class="valuefiat">${wallet["value"].toFixed(2)}</td>
       <td class="fiat">${wallet["convert"].toUpperCase()}</td>
-      <td class="delwall"><a href="delForm.html?n=${n}">Delete this wallet</a></td>
+      <td class="delwall"><a href="delForm.html?n=${n}"><img alt="Delete this wallet" width="30" height="30" src="../icons/minussign.png"></a></td>
     </tr>`;
     n++;
   }
-  innerHtml += `<tr><td colspan=4 class="addwall"><a href="addForm.html">Add a wallet</a></td></tr>`
+  //last line to have an add button
+  innerHtml += `<tr><td colspan=4></td> <td class="addwall"><a href="addForm.html"><img alt="Add a wallet" width="30" height="30" src="../icons/plussign.png"></a></td></tr>`
   innerHtml += "</table>";
   document.body.innerHTML = innerHtml; // loads the inner html in the body
 }
