@@ -1,5 +1,4 @@
 /*
-  I need to handle errors to display a message if something wrong happened.
   I need to improve my CSS styling
 */
 let browser = chrome || browser;
@@ -50,6 +49,14 @@ function *getBalances(walletList) {
         let post = yield response.json(); // extract json object
 
         balances[i] += parseFloat(post.data.confirmed_balance); // add the confirmed balance of this address to the total balance
+      } else if (walletList[i].type == "vtc" ) { // if the crypto is supported by vtconline
+        /***********THIS ALWAYS GETS A NETWORK ERROR ... **************/
+        let uri = "https://explorer.vertcoin.org/ext/getbalance/" + walletList[i].addr[j]; // create URI of request
+        console.log(uri);
+        let response = yield fetch(uri, {mode:'cors'}); // get api response
+        let post = yield response.json(); // extract json object
+
+        balances[i] += parseFloat(post); // add the confirmed balance of this address to the total balance
       }
     }
   }
@@ -91,6 +98,74 @@ function runGenerator(gen, arg) { // run the generator, code inspired by a FunFu
 
 function displayWallets(walletsData) {
   // displays all the wallets balance, value pairs in a a nice table that is easy to format.
+  let body = document.getElementsByTagName("body")[0];
+  let table = document.createElement("table");
+  let n = 0; //counts the wallets
+  for (wallet of walletsData.list) { // iterates through all wallets
+    // add a table row with usefull information and css classes to make it easy to style
+    let row = document.createElement("tr");
+    row.classList.add("walletrow");
+
+    let col = document.createElement("td");
+    col.classList.add("balance");
+    col.appendChild(document.createTextNode(wallet["balance"].toFixed(2)));
+    row.appendChild(col);
+
+    col = document.createElement("td");
+    col.classList.add("cryptotype");
+    col.appendChild(document.createTextNode(wallet["type"].toUpperCase()));
+    row.appendChild(col);
+
+    col = document.createElement("td");
+    col.classList.add("valuefiat");
+    col.appendChild(document.createTextNode(wallet["value"].toFixed(2)));
+    row.appendChild(col);
+
+    col = document.createElement("td");
+    col.classList.add("convert");
+    col.appendChild(document.createTextNode(wallet["convert"].toUpperCase()));
+    row.appendChild(col);
+
+    col = document.createElement("td");
+    col.classList.add("delwall");
+    let link = document.createElement("a");
+    link.setAttribute("href", "delForm.html?n="+n);
+    let image = document.createElement("img");
+    image.setAttribute("alt", "Delete this wallet");
+    image.setAttribute("width", "30");
+    image.setAttribute("height", "30");
+    image.setAttribute("src", "../icons/minussign.png");
+    link.appendChild(image);
+    col.appendChild(link);
+    row.appendChild(col);
+    table.appendChild(row);
+    n++;
+  }
+
+  let row = document.createElement("tr");
+  row.classList.add("addrow");
+  let col = document.createElement("td");
+  col.setAttribute("colspan", 4);
+  row.appendChild(col);
+  col = document.createElement("td");
+  col.classList.add("addwall");
+  let link = document.createElement("a");
+  link.setAttribute("href", "addForm.html");
+  let image = document.createElement("img");
+  image.setAttribute("alt", "Add a wallet");
+  image.setAttribute("width", "30");
+  image.setAttribute("height", "30");
+  image.setAttribute("src", "../icons/plussign.png");
+  link.appendChild(image);
+  col.appendChild(link);
+  row.appendChild(col);
+  table.appendChild(row);
+  body.appendChild(table);
+}
+
+/*
+function displayWallets(walletsData) {
+  // displays all the wallets balance, value pairs in a a nice table that is easy to format.
   innerHtml = "<table>"
   let n = 0; //counts the wallets
   for (wallet of walletsData.list) { // iterates through all wallets
@@ -108,4 +183,4 @@ function displayWallets(walletsData) {
   innerHtml += `<tr><td colspan=4></td> <td class="addwall"><a href="addForm.html"><img alt="Add a wallet" width="30" height="30" src="../icons/plussign.png"></a></td></tr>`
   innerHtml += "</table>";
   document.body.innerHTML = innerHtml; // loads the inner html in the body
-}
+}*/

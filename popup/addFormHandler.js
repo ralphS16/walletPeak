@@ -10,7 +10,7 @@ function verifyAddresses(){
   let valid = true;
   //TODO actually validate addresses
   for (addr of addresses) {
-    if (/[^a-zA-Z0-9]/.test(addr)) {
+    if (/[^a-zA-Z0-9]+/.test(addr)) {
       valid = false;
       break;
     }
@@ -34,7 +34,13 @@ function addWallet(e){
       obj.data.list.push(newWallet); // push the new wallet in the list of wallet
       obj.data.last_update = 0; // reset update time so that it updates the new wallet
       browser.storage.local.set({"data": obj.data}); // store the updated wallet
-      document.body.innerHTML = `<p class="addSuccess">You successfully added a new wallet.</p>`;
+
+      //display text to show that the wallet was added
+      document.body = document.createElement("body");
+      let text = document.createElement("p");
+      text.classList.add("addSuccess");
+      text.appendChild(document.createTextNode("You successfully added a new wallet."));
+      document.body.appendChild(text);
     });
   }
 }
