@@ -49,15 +49,23 @@ function *getBalances(walletList) {
         let post = yield response.json(); // extract json object
 
         balances[i] += parseFloat(post.data.confirmed_balance); // add the confirmed balance of this address to the total balance
-      } else if (walletList[i].type == "vtc" ) { // if the crypto is supported by vtconline
-        /***********THIS ALWAYS GETS A NETWORK ERROR ... **************/
+      } else if (walletList[i].type == "eth" ) { // eth is handled by the blockcypher API
+        let uri = "https://api.blockcypher.com/v1/eth/main/addrs/" + walletList[i].addr[j] + "/balance"; // create URI of request
+        console.log(uri);
+        let response = yield fetch(uri); // get api response
+        let post = yield response.json(); // extract json object
+
+        balances[i] += parseInt(post.balance) / Math.pow(10,18); // add the confirmed balance of this address to the total balance (convert from wei to ETH)
+      }
+      /* else if (walletList[i].type == "vtc" ) { // if the crypto is supported by vtconline
+        /***********THIS ALWAYS GETS A NETWORK ERROR ... *************
         let uri = "https://explorer.vertcoin.org/ext/getbalance/" + walletList[i].addr[j]; // create URI of request
         console.log(uri);
         let response = yield fetch(uri, {mode:'cors'}); // get api response
         let post = yield response.json(); // extract json object
 
         balances[i] += parseFloat(post); // add the confirmed balance of this address to the total balance
-      }
+      } */
     }
   }
   // when all wallets were processed, return the balances array
@@ -122,7 +130,7 @@ function displayWallets(walletsData) {
     row.appendChild(col);
 
     col = document.createElement("td");
-    col.classList.add("convert");
+    col.classList.add("fiat");
     col.appendChild(document.createTextNode(wallet["convert"].toUpperCase()));
     row.appendChild(col);
 
